@@ -1,7 +1,18 @@
-Verify Data in PostgreSQL
+# IMF Gadget API 
 
-Connect to your database to confirm changes:
-psql -U postgres -d imf_gadgets
+A secure API for managing classified gadgets used by the Impossible Missions Force. Built with Node.js, Express, and PostgreSQL.
 
-Run SQL queries:
-SELECT * FROM Gadgets;
+## Features 
+- JWT Authentication & Authorization
+- CRUD Operations for Gadgets
+- Self-Destruct Sequence with Confirmation Codes
+- Mission Success Probability Calculator
+- Status-based Filtering
+- Swagger API Documentation
+
+## Quick Start 
+
+### Prerequisites
+- Node.js v16+
+- PostgreSQL
+- npm

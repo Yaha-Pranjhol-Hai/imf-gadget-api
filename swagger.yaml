@@ -1,0 +1,181 @@
+openapi: 3.0.0
+info:
+  title: IMF Gadget API
+  version: 1.0.0
+  description: Secure API for managing classified IMF gadgets
+servers:
+  - url: http://localhost:3000
+    description: Local server
+  - url: YOUR_DEPLOYED_URL
+    description: Production server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+tags:
+  - name: Authentication
+    description: User registration and login
+  - name: Gadgets
+    description: Mission-critical gadget management
+
+paths:
+  /register:
+    post:
+      tags: [Authentication]
+      summary: Register new agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        201:
+          description: Agent created
+
+  /login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+
+  /gadgets:
+    get:
+      tags: [Gadgets]
+      summary: List all gadgets
+      security: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [Available, Deployed, Destroyed, Decommissioned]
+      responses:
+        200:
+          description: Gadget list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    status:
+                      type: string
+                    missionSuccessProbability:
+                      type: integer
+
+    post:
+      tags: [Gadgets]
+      summary: Create new gadget
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Gadget created
+
+  /gadgets/{id}:
+    patch:
+      tags: [Gadgets]
+      summary: Update gadget
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                status:
+                  type: string
+      responses:
+        200:
+          description: Gadget updated
+
+    delete:
+      tags: [Gadgets]
+      summary: Decommission gadget
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Gadget decommissioned
+
+  /gadgets/{id}/self-destruct:
+    post:
+      tags: [Gadgets]
+      summary: Initiate self-destruct
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Destruct sequence initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  confirmationCode:
+                    type: string
