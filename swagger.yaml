@@ -2,10 +2,16 @@ openapi: 3.0.0
 info:
   title: IMF Gadget API
   version: 1.0.0
-  description: Secure API for managing classified IMF gadgets
+  description: |
+    Secure API for managing classified IMF gadgets.
+    ## Authentication
+    - Register agent first at `/register`
+    - Get JWT token from `/login`
+    - Use `Bearer <token>` in Authorization header for protected endpoints
+
 servers:
   - url: http://localhost:3000
-    description: Local server
+    description: Local development server
   - url: https://imf-gadget-api-0akv.onrender.com
     description: Production server
 
@@ -22,34 +28,41 @@ components:
         id:
           type: string
           format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
         name:
           type: string
+          example: The Nightingale
         status:
           type: string
           enum: [Available, Deployed, Destroyed, Decommissioned]
+          example: Available
         missionSuccessProbability:
           type: integer
           minimum: 0
           maximum: 100
+          example: 75
         createdAt:
           type: string
           format: date-time
+          example: 2024-02-20T12:34:56Z
         decommissionedAt:
           type: string
           format: date-time
           nullable: true
+          example: null
 
 tags:
   - name: Authentication
-    description: User registration and login
+    description: Agent registration and authentication
   - name: Gadgets
-    description: Mission-critical gadget management
+    description: Mission-critical gadget operations
 
 paths:
   /register:
     post:
       tags: [Authentication]
       summary: Register new agent
+      operationId: registerAgent
       requestBody:
         required: true
         content:
@@ -60,9 +73,11 @@ paths:
               properties:
                 username:
                   type: string
+                  minLength: 3
                   example: ethan_hunt
                 password:
                   type: string
+                  minLength: 6
                   example: impossible
       responses:
         201:
@@ -74,13 +89,17 @@ paths:
                 properties:
                   id:
                     type: string
+                    format: uuid
                   username:
                     type: string
+        400:
+          description: Invalid registration data
 
   /login:
     post:
       tags: [Authentication]
       summary: Authenticate agent
+      operationId: loginAgent
       requestBody:
         required: true
         content:
@@ -113,12 +132,14 @@ paths:
     get:
       tags: [Gadgets]
       summary: List all gadgets
+      operationId: getGadgets
       parameters:
         - in: query
           name: status
           schema:
             type: string
             enum: [Available, Deployed, Destroyed, Decommissioned]
+          description: Filter gadgets by status
       responses:
         200:
           description: Success
@@ -128,9 +149,13 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Gadget'
+        500:
+          description: Server error
+
     post:
       tags: [Gadgets]
       summary: Create new gadget
+      operationId: createGadget
       security:
         - BearerAuth: []
       requestBody:
@@ -143,6 +168,7 @@ paths:
               properties:
                 name:
                   type: string
+                  minLength: 3
                   example: Grappling Hook
       responses:
         201:
@@ -151,20 +177,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Gadget'
+        400:
+          description: Invalid input
+        401:
+          description: Unauthorized
 
   /gadgets/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+
     patch:
       tags: [Gadgets]
       summary: Update gadget
+      operationId: updateGadget
       security:
         - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
       requestBody:
         content:
           application/json:
@@ -173,6 +206,7 @@ paths:
               properties:
                 name:
                   type: string
+                  minLength: 3
                 status:
                   type: string
                   enum: [Available, Deployed, Destroyed, Decommissioned]
@@ -183,24 +217,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Gadget'
+        400:
+          description: Invalid input
+        401:
+          description: Unauthorized
         404:
           description: Gadget not found
 
     delete:
       tags: [Gadgets]
       summary: Decommission gadget
+      operationId: decommissionGadget
       security:
         - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
       responses:
         200:
           description: Gadget decommissioned
+        401:
+          description: Unauthorized
         404:
           description: Gadget not found
 
@@ -208,15 +242,9 @@ paths:
     post:
       tags: [Gadgets]
       summary: Initiate self-destruct
+      operationId: selfDestructGadget
       security:
         - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
       responses:
         200:
           description: Destruct sequence initiated
@@ -228,5 +256,7 @@ paths:
                   confirmationCode:
                     type: string
                     example: X9FG3H
+        401:
+          description: Unauthorized
         404:
           description: Gadget not found
