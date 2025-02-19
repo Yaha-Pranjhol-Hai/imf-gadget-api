@@ -6,7 +6,7 @@ info:
 servers:
   - url: http://localhost:3000
     description: Local server
-  - url: YOUR_DEPLOYED_URL
+  - url: https://imf-gadget-api-0akv.onrender.com
     description: Production server
 
 components:
@@ -15,6 +15,29 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    Gadget:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+          enum: [Available, Deployed, Destroyed, Decommissioned]
+        missionSuccessProbability:
+          type: integer
+          minimum: 0
+          maximum: 100
+        createdAt:
+          type: string
+          format: date-time
+        decommissionedAt:
+          type: string
+          format: date-time
+          nullable: true
 
 tags:
   - name: Authentication
@@ -33,14 +56,26 @@ paths:
           application/json:
             schema:
               type: object
+              required: [username, password]
               properties:
                 username:
                   type: string
+                  example: ethan_hunt
                 password:
                   type: string
+                  example: impossible
       responses:
         201:
           description: Agent created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  username:
+                    type: string
 
   /login:
     post:
@@ -52,11 +87,14 @@ paths:
           application/json:
             schema:
               type: object
+              required: [username, password]
               properties:
                 username:
                   type: string
+                  example: ethan_hunt
                 password:
                   type: string
+                  example: impossible
       responses:
         200:
           description: Authentication successful
@@ -67,12 +105,14 @@ paths:
                 properties:
                   token:
                     type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMzQ1IiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        401:
+          description: Invalid credentials
 
   /gadgets:
     get:
       tags: [Gadgets]
       summary: List all gadgets
-      security: []
       parameters:
         - in: query
           name: status
@@ -81,23 +121,13 @@ paths:
             enum: [Available, Deployed, Destroyed, Decommissioned]
       responses:
         200:
-          description: Gadget list
+          description: Success
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    status:
-                      type: string
-                    missionSuccessProbability:
-                      type: integer
-
+                  $ref: '#/components/schemas/Gadget'
     post:
       tags: [Gadgets]
       summary: Create new gadget
@@ -109,12 +139,18 @@ paths:
           application/json:
             schema:
               type: object
+              required: [name]
               properties:
                 name:
                   type: string
+                  example: Grappling Hook
       responses:
         201:
           description: Gadget created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gadget'
 
   /gadgets/{id}:
     patch:
@@ -128,6 +164,7 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       requestBody:
         content:
           application/json:
@@ -138,9 +175,16 @@ paths:
                   type: string
                 status:
                   type: string
+                  enum: [Available, Deployed, Destroyed, Decommissioned]
       responses:
         200:
           description: Gadget updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gadget'
+        404:
+          description: Gadget not found
 
     delete:
       tags: [Gadgets]
@@ -153,9 +197,12 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         200:
           description: Gadget decommissioned
+        404:
+          description: Gadget not found
 
   /gadgets/{id}/self-destruct:
     post:
@@ -169,6 +216,7 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         200:
           description: Destruct sequence initiated
@@ -179,3 +227,6 @@ paths:
                 properties:
                   confirmationCode:
                     type: string
+                    example: X9FG3H
+        404:
+          description: Gadget not found
