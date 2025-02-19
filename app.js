@@ -1,18 +1,28 @@
 import express from 'express';
 import cors from 'cors';
 import Gadget from './models/Gadget.js';
-import sequelize from './config/database.js';
 import User from './models/User.js';
+import sequelize from './config/database.js';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { authenticate } from './middleware/auth.js';
-import bcrypt from 'bcrypt';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
+const swaggerDocument = YAML.load('./swagger.yaml');
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 sequelize.sync().then(() => {
   console.log('Database synced');
+});
+
+
+app.get('/api-docs', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerDocument);
 });
 
 app.get('/', (req, res) => {
